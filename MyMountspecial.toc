@@ -1,0 +1,10 @@
+﻿## Interface: 70000
+## Title: MyMountspecial
+## Notes: Lets your mount randomly perform its /mountspecial
+
+## Author: Sará.Festung der Stürme-EU <Sara#2672> <sarafdswow@gmail.com>
+## Version: 7.0.3.0
+
+## SavedVariable: MyMountspecial_SV
+
+MyMountspecial.lua
