@@ -1,4 +1,4 @@
-﻿## Interface: 70100
+## Interface: 70100
 ## Title: MyMountspecial
 ## Notes: Lets your mount randomly perform its /mountspecial
 
