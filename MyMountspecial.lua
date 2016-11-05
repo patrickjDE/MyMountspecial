@@ -1,5 +1,5 @@
 ﻿--[[
-	MyMountspecial v7.0.3.0 (r6)
+	MyMountspecial v7.1.0.0 (r7)
 	Copyright (c) 2012-2016, All rights reserved.
 	
 	Written an maintained by:
