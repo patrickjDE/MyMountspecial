@@ -49,5 +49,8 @@ Temporary Items
 # Notepad++ backups
 /nppBackup/
 
+# IDE profile
+.idea
+
 # Zips for distribution
 *.zip

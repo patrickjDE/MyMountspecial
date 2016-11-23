@@ -1,5 +1,5 @@
 --[[
-	MyMountspecial v7.1.0.0 (r7)
+	MyMountspecial v7.1.0.1 (r8)
 	Copyright (c) 2012-2016, All rights reserved.
 	
 	Written an maintained by:
@@ -11,137 +11,144 @@
 	THIS ADDON IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 ]]
 
-local f = CreateFrame("frame");
-local f2 = CreateFrame("frame");
-f:RegisterEvent("COMPANION_UPDATE");
-f:RegisterEvent("ADDON_LOADED");
+local defaultConfiguration = {
+    enabled = true,
+    randominterval = true,
+    interval = 180,
+    mininterval = 120,
+    maxinterval = 240,
+};
 
-local mounted = nil;
-local timer = 0;
-local interval = 120;
+local MMS = select(2, ...);
 
-local function SetInterval()
+MMS.IntervalFrame = CreateFrame("frame", "MyMountspecialIntervalFrame");
+MMS.IntervalFrame:RegisterEvent("ADDON_LOADED");
+
+MMS.IntervalFrame:SetScript("OnEvent",function(self, event, arg1)
+    if (event == "COMPANION_UPDATE") then
+        if (arg1 == "MOUNT") then
+            MMS.MountedCheckFrame:CheckIfMounted();
+        end;
+    else
+        if (event == "ADDON_LOADED") then
+            if (arg1 == "MyMountspecial") then
+                self:UnregisterEvent("ADDON_LOADED");
+                self:Initialize();
+            end;
+        end;
+    end;
+end);
+
+function MMS.IntervalFrame:ResetInterval()
+    self.timer = 0;
 	if (MyMountspecial_SV.randominterval) then
-		interval = random(MyMountspecial_SV.mininterval,MyMountspecial_SV.maxinterval);
+		self.interval = random(MyMountspecial_SV.mininterval,MyMountspecial_SV.maxinterval);
 	else
-		interval = MyMountspecial_SV.interval;
+        self.interval =  MyMountspecial_SV.interval;
 	end;
 end;
 
-local function Initialize()
-	MyMountspecial_SV = MyMountspecial_SV or {
-		enabled = true,
-		randominterval = true,
-		interval = 180,
-		mininterval = 120,
-		maxinterval = 240
-	}
+function MMS.IntervalFrame:Initialize()
+	MyMountspecial_SV = MyMountspecial_SV or defaultConfiguration;
 	if (MyMountspecial_SV.enabled == false) then
-		f:UnregisterEvent("COMPANION_UPDATE");
+		self:UnregisterEvent("COMPANION_UPDATE");
+    else
+        self:RegisterEvent("COMPANION_UPDATE");
 	end;
-	SetInterval();
-end
+    self:ResetInterval();
+end;
 
-local function StartRandomMountspecial()
-	f:SetScript("OnUpdate",function(s,e)
-		timer = timer + e;
-		if (timer > interval) then
+function MMS.IntervalFrame:Start()
+	self:SetScript("OnUpdate",function(self, elapsed)
+		self.timer = self.timer + elapsed;
+		if (self.timer > self.interval) then
 			if (GetUnitSpeed("player") == 0) then
 				DoEmote("MOUNTSPECIAL");
 			end
-			SetInterval();
-			timer = 0;
+            self:ResetInterval();
 		end;
 	end);
 end;
 
-local function CheckIfMounted()
-	local t = 0;
-	f2:SetScript("OnUpdate",function(s,e)
-		t = t + e;
-		if (t > 0.1) then
-			mounted = IsMounted();
-			f2:SetScript("OnUpdate",nil);
-			if (mounted) then
-				StartRandomMountspecial();
+MMS.MountedCheckFrame = CreateFrame("frame", "MyMountspecialMountedCheckFrame");
+function MMS.MountedCheckFrame:CheckIfMounted()
+    self.timer = 0;
+    self:SetScript("OnUpdate",function(self, elapsed)
+		self.timer = self.timer + elapsed;
+		if (self.timer > 0.1) then
+			self:SetScript("OnUpdate",nil);
+			if (IsMounted()) then
+                MMS.IntervalFrame:Start();
 			else
-				f:SetScript("OnUpdate",nil);
+				MMS.IntervalFrame:SetScript("OnUpdate",nil);
 			end;
 		end;
 	end);
 end;
 
-f:SetScript("OnEvent",function(s,e,a)
-	if (e == "COMPANION_UPDATE") then
-		if (a == "MOUNT") then
-			CheckIfMounted();
-		end;
-	else
-		if (e == "ADDON_LOADED") then
-			if (a == "MyMountspecial") then
-				f:UnregisterEvent("ADDON_LOADED");
-				Initialize();
-			end;
-		end;
-	end;
-end);
+local YELLOW = "ffffff22";
+local RED = "ffee2200";
+local GREEN = "ff00ff00";
 
 SLASH_MYMOUNTSPECIAL1, SLASH_MYMOUNTSPECIAL2 = '/mms', '/mymountspecial';
 function SlashCmdList.MYMOUNTSPECIAL(msg)
-	cmd, val = msg:match("(%S*)%s*(%S*)");
+	local cmd, val = msg:match("(%S*)%s*(%S*)");
 	if (cmd == "on") then
 		MyMountspecial_SV.enabled = true;
-		f:RegisterEvent("COMPANION_UPDATE");
-		print("|cffffff22MMS|r is now |cff00ff00on|r");
+		MMS.IntervalFrame:RegisterEvent("COMPANION_UPDATE");
+		print("|c"..YELLOW.."MMS|r is now |c"..GREEN.."on|r");
 	elseif (cmd == "off") then
 		MyMountspecial_SV.enabled = false;
-		f:UnregisterEvent("COMPANION_UPDATE");
-		print("|cffffff22MMS|r is now |cffee2200off|r");
-	elseif (cmd:find("ra")) then
+		MMS.IntervalFrame:UnregisterEvent("COMPANION_UPDATE");
+		print("|c"..YELLOW.."MMS|r is now |c"..RED.."off|r");
+	elseif (cmd:find("^r")) then
 		if (val == "on") then
 			MyMountspecial_SV.randominterval = true;
-			print("|cffffff22MMS:|r random intervals are now |cff00ff00on|r");
-			SetInterval();
+			print("|c"..YELLOW.."MMS:|r random intervals are now |c"..GREEN.."on|r");
 		elseif (val == "off") then
 			MyMountspecial_SV.randominterval = false;
-			print("|cffffff22MMS:|r random intervals are now |cffee2200off|r");
-			SetInterval();
+			print("|c"..YELLOW.."MMS:|r random intervals are now |c"..RED.."off|r");
 		end
-	elseif (cmd:find("min")) then
+	elseif (cmd:find("^min")) then
 		val = tonumber(val);
 		if (val) then
-			MyMountspecial_SV.mininterval = val;
-			print("|cffffff22MMS:|r minimum interval is now "..val);
-			SetInterval();
+            if (val < MyMountspecial_SV.maxinterval) then
+                MyMountspecial_SV.mininterval = val;
+                print("|c"..YELLOW.."MMS:|r minimum interval is now "..val.."seconds");
+            else
+                print("|c"..YELLOW.."MMS:|r minimum interval must be smaller than the maximum interval ("..MyMountspecial_SV.maxinterval.." seconds)");
+            end
 		end;
-	elseif (cmd:find("max")) then
+	elseif (cmd:find("^max")) then
 		val = tonumber(val);
 		if (val) then
-			MyMountspecial_SV.maxinterval = val;
-			print("|cffffff22MMS:|r maximum interval is now "..val);
-			SetInterval();
+            if (val > MyMountspecial_SV.mininterval) then
+                MyMountspecial_SV.maxinterval = val;
+                print("|c"..YELLOW.."MMS:|r maximum interval is now "..val.."seconds");
+            else
+                print("|c"..YELLOW.."MMS:|r maximum interval must be greater than the minimum interval ("..MyMountspecial_SV.mininterval.." seconds)");
+            end
 		end;
-	elseif (cmd:find("int")) then
+	elseif (cmd:find("^i")) then
 		val = tonumber(val);
 		if (val) then
 			MyMountspecial_SV.interval = val;
-			print("|cffffff22MMS:|r fixed interval is now "..val);
-			SetInterval();
+			print("|c"..YELLOW.."MMS:|r fixed interval is now "..val.."seconds");
 		end;
 	else
-		print("|cffffff22/mms|r or |cffffff22/mymountspecial|r");
+		print("|c"..YELLOW.."/mms|r or |c"..YELLOW.."/mymountspecial|r");
 		if (MyMountspecial_SV.enabled) then
-			print("  |cff00ff00on|r | |cffffff22off|r -- enable/disable addon");
+			print("  |c"..GREEN.."on|r | |c"..YELLOW.."off|r -- enable/disable addon");
 		else
-			print("  |cffffff22on|r | |cffee2200off|r -- enable/disable addon");
+			print("  |c"..YELLOW.."on|r | |c"..RED.."off|r -- enable/disable addon");
 		end;
-		print("  |cffffff22int #|r -- set interval in sec (now: "..MyMountspecial_SV.interval..")");
+		print("  |c"..YELLOW.."int #|r -- set fixed interval in seconds (now: "..MyMountspecial_SV.interval..")");
 		if (MyMountspecial_SV.randominterval) then
-			print("  |cffffff22random|r |cff00ff00on|r | |cffffff22off|r -- turn use of random interval on/off");
+			print("  |c"..YELLOW.."random|r |c"..GREEN.."on|r | |c"..YELLOW.."off|r -- turn random interval on/off");
 		else
-			print("  |cffffff22random on|r | |cffee2200off|r -- turn random interval on/off");
+			print("  |c"..YELLOW.."random on|r | |c"..RED.."off|r -- turn random interval on/off");
 		end;
-		print("  |cffffff22min #|r -- set minimum interval in sec (now: "..MyMountspecial_SV.mininterval..")");
-		print("  |cffffff22max #|r -- set maximum interval in sec (now: "..MyMountspecial_SV.maxinterval..")");
+		print("  |c"..YELLOW.."min #|r -- set minimum interval in seconds (now: "..MyMountspecial_SV.mininterval..")");
+		print("  |c"..YELLOW.."max #|r -- set maximum interval in seconds (now: "..MyMountspecial_SV.maxinterval..")");
 	end;
 end;
