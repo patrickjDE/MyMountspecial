@@ -3,7 +3,7 @@
 ## Notes: Lets your mount randomly perform its /mountspecial
 
 ## Author: Sará.Festung der Stürme-EU <Sara#2672> <sarafdswow@gmail.com>
-## Version: 7.1.0.0
+## Version: 7.1.0.1
 
 ## SavedVariable: MyMountspecial_SV
 
