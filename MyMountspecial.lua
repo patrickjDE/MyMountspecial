@@ -1,6 +1,6 @@
 --[[
-	MyMountspecial v7.1.0.2 (r9)
-	Copyright (c) 2012-2016, All rights reserved.
+	MyMountspecial v8.0.1.0 (r10)
+	Copyright (c) 2012-2018, All rights reserved.
 	
 	Written an maintained by:
 		Sará @ Festung der Stürme (EU-de) - Sara#2672 - sarafdswow@gmail.com
